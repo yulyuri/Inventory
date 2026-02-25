@@ -1,0 +1,9 @@
+services:
+  inventory:
+    build: .
+    container_name: inventory
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    volumes:
+      - ./data:/app/data
