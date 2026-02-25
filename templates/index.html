@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StockBox — Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2336;
+    --border: #2a2f45;
+    --accent: #4f9eff;
+    --accent2: #7b61ff;
+    --green: #3dd68c;
+    --red: #ff5f57;
+    --yellow: #ffd60a;
+    --text: #e8eaf2;
+    --text2: #8b90a7;
+    --text3: #4a5070;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--text2); font-weight: 400; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3a8ef0; }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--text3); }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(255,95,87,0.3); }
+  .btn-danger:hover { background: rgba(255,95,87,0.1); }
+  .btn-green { background: var(--green); color: #0a1a10; }
+  .btn-green:hover { background: #2ec07a; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* SEARCH BAR */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 16px;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px 11px 42px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* COUNT */
+  .item-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface2); }
+  th {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(42,47,69,0.5);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.item-row { cursor: pointer; transition: background 0.1s; }
+  tr.item-row:hover td { background: var(--surface2); }
+  
+  .td-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    white-space: nowrap;
+    width: 130px;
+  }
+  .td-name {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .td-desc {
+    color: var(--text2);
+    font-size: 13px;
+    max-width: 400px;
+  }
+  .td-desc-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .empty-state .big { font-size: 32px; margin-bottom: 12px; }
+
+  /* MODAL OVERLAY */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.active { display: flex; }
+
+  /* MODAL */
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .modal-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .modal-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .close-btn:hover { color: var(--text); background: var(--surface2); }
+
+  .modal-body { padding: 24px; }
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* BREADCRUMB */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+  .breadcrumb-item {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .breadcrumb-item:hover { text-decoration: underline; }
+  .breadcrumb-sep { color: var(--text3); }
+  .breadcrumb-current { color: var(--text2); }
+
+  /* FORM */
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--mono);
+    margin-bottom: 7px;
+  }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    border-color: var(--accent);
+  }
+  .form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.5;
+  }
+  .form-select option { background: var(--surface2); }
+  
+  /* CHILDREN LIST */
+  .children-section { margin-top: 20px; }
+  .children-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--mono);
+    margin-bottom: 8px;
+  }
+  .children-list { display: flex; flex-direction: column; gap: 4px; }
+  .child-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .child-item:hover { border-color: var(--accent); }
+  .child-name { font-size: 13px; font-weight: 500; }
+  .child-id { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  /* QR SECTION */
+  .qr-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .qr-img { width: 80px; height: 80px; border-radius: 4px; background: white; }
+  .qr-info { flex: 1; }
+  .qr-label {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .qr-name { font-weight: 500; margin-bottom: 8px; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+    background: rgba(79,158,255,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(79,158,255,0.2);
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    z-index: 999;
+    display: none;
+    animation: toastIn 0.2s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .toast.show { display: block; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  @keyframes toastIn {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* COPY BUTTON */
+  .copy-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+  .copy-btn:hover { color: var(--accent); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .td-id { display: none; }
+    .td-desc { display: none; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Stock<span>Box</span></div>
+  <div class="header-actions">
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add Item</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Search by name, ID, or description..." oninput="onSearch()">
+  </div>
+  <div class="item-count" id="itemCount">Loading...</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <tr><td colspan="3" class="empty-state"><div class="big">⟳</div>Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Item Detail Modal -->
+<div class="overlay" id="detailOverlay" onclick="overlayClick(event, 'detailOverlay')">
+  <div class="modal" id="detailModal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detailName">—</div>
+        <div class="modal-id">
+          <span id="detailId" style="font-family:var(--mono)">—</span>
+          <button class="copy-btn" onclick="copyId()" title="Copy ID">⎘</button>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeModal('detailOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="breadcrumb" id="detailBreadcrumb"></div>
+
+      <div class="form-group">
+        <label class="form-label">Short Name</label>
+        <input class="form-input" id="editName" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description / Notes</label>
+        <textarea class="form-textarea" id="editDesc"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Parent (Location)</label>
+        <select class="form-select" id="editParent">
+          <option value="">— No parent (top level) —</option>
+        </select>
+      </div>
+
+      <div class="children-section" id="childrenSection" style="display:none">
+        <div class="children-label">Contains</div>
+        <div class="children-list" id="childrenList"></div>
+      </div>
+
+      <div class="qr-section" id="qrSection">
+        <img class="qr-img" id="qrImg" src="" alt="QR Code">
+        <div class="qr-info">
+          <div class="qr-label">Label / Sticker</div>
+          <div class="qr-name" id="qrName"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="downloadQR()">⬇ Download QR</button>
+            <button class="btn btn-ghost btn-sm" onclick="printLabel()">⎙ Print Label</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteItem()">Delete</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('detailOverlay')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveItem()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="overlay" id="addOverlay" onclick="overlayClick(event, 'addOverlay')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add New Item</div>
+      <button class="close-btn" onclick="closeModal('addOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Short Name *</label>
+        <input class="form-input" id="addName" type="text" placeholder="e.g. M3 Hex Nuts, 100pc">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description / Notes</label>
+        <textarea class="form-textarea" id="addDesc" placeholder="Additional details, serial numbers, notes..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Parent (Location)</label>
+        <select class="form-select" id="addParent">
+          <option value="">— No parent (top level) —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('addOverlay')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitAdd()">Add Item</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Print Label Window content -->
+<div id="printContent" style="display:none"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let currentItem = null;
+let allParents = [];
+let searchTimeout = null;
+
+// ─── INIT ───────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadItems();
+  // Handle direct URL navigation to /item/:id
+  const path = window.location.pathname;
+  const m = path.match(/^\/item\/(\d+)/);
+  if (m) openItem(parseInt(m[1]));
+});
+
+// ─── ITEMS LIST ──────────────────────────────────────────────────────────
+async function loadItems(search = '') {
+  const body = document.getElementById('itemsBody');
+  try {
+    const res = await fetch(`${API}/api/items?search=${encodeURIComponent(search)}`);
+    const items = await res.json();
+    document.getElementById('itemCount').textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+    
+    if (items.length === 0) {
+      body.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="big">📦</div>${search ? 'No items match your search' : 'No items yet — add your first item!'}</div></td></tr>`;
+      return;
+    }
+    body.innerHTML = items.map(item => `
+      <tr class="item-row" onclick="openItem(${item.id})">
+        <td class="td-id">${item.id}</td>
+        <td class="td-name">${esc(item.short_name)}</td>
+        <td class="td-desc"><div class="td-desc-text">${esc(item.description || '')}</div></td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="big">⚠</div>Failed to load items</div></td></tr>`;
+  }
+}
+
+function onSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => loadItems(document.getElementById('searchInput').value), 250);
+}
+
+// ─── ITEM DETAIL ─────────────────────────────────────────────────────────
+async function openItem(id) {
+  history.pushState({}, '', `/item/${id}`);
+  await loadParents();
+  
+  try {
+    const res = await fetch(`${API}/api/items/${id}`);
+    if (!res.ok) throw new Error();
+    const item = await res.json();
+    currentItem = item;
+    
+    document.getElementById('detailName').textContent = item.short_name;
+    document.getElementById('detailId').textContent = item.id;
+    document.getElementById('editName').value = item.short_name;
+    document.getElementById('editDesc').value = item.description || '';
+    
+    // Breadcrumb
+    const bc = document.getElementById('detailBreadcrumb');
+    if (item.ancestors && item.ancestors.length > 1) {
+      const parts = item.ancestors.slice(0, -1).map(a =>
+        `<span class="breadcrumb-item" onclick="openItem(${a.id})">${esc(a.short_name)}</span>`
+      );
+      bc.innerHTML = parts.join('<span class="breadcrumb-sep"> › </span>') + '<span class="breadcrumb-sep"> › </span><span class="breadcrumb-current">' + esc(item.short_name) + '</span>';
+      bc.style.display = 'flex';
+    } else {
+      bc.style.display = 'none';
+    }
+    
+    // Populate parent select
+    populateParentSelect('editParent', item.id, item.parent_id);
+    
+    // Children
+    if (item.children && item.children.length > 0) {
+      document.getElementById('childrenSection').style.display = 'block';
+      document.getElementById('childrenList').innerHTML = item.children.map(c => `
+        <div class="child-item" onclick="openItem(${c.id})">
+          <span class="child-name">${esc(c.short_name)}</span>
+          <span class="child-id">${c.id}</span>
+        </div>
+      `).join('');
+    } else {
+      document.getElementById('childrenSection').style.display = 'none';
+    }
+    
+    // QR
+    document.getElementById('qrImg').src = `${API}/api/items/${id}/qr?t=${Date.now()}`;
+    document.getElementById('qrName').textContent = item.short_name;
+    
+    document.getElementById('detailOverlay').classList.add('active');
+  } catch(e) {
+    showToast('Failed to load item', 'error');
+  }
+}
+
+async function saveItem() {
+  if (!currentItem) return;
+  const name = document.getElementById('editName').value.trim();
+  if (!name) { showToast('Name is required', 'error'); return; }
+  
+  const parentVal = document.getElementById('editParent').value;
+  try {
+    const res = await fetch(`${API}/api/items/${currentItem.id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        short_name: name,
+        description: document.getElementById('editDesc').value,
+        parent_id: parentVal ? parseInt(parentVal) : null
+      })
+    });
+    if (!res.ok) throw new Error();
+    showToast('Saved!', 'success');
+    loadItems(document.getElementById('searchInput').value);
+    // Refresh modal
+    openItem(currentItem.id);
+  } catch(e) {
+    showToast('Failed to save', 'error');
+  }
+}
+
+async function deleteItem() {
+  if (!currentItem) return;
+  if (!confirm(`Delete "${currentItem.short_name}"? Its children will be unparented.`)) return;
+  try {
+    await fetch(`${API}/api/items/${currentItem.id}`, { method: 'DELETE' });
+    closeModal('detailOverlay');
+    showToast('Item deleted', 'success');
+    loadItems(document.getElementById('searchInput').value);
+    history.pushState({}, '', '/');
+  } catch(e) {
+    showToast('Failed to delete', 'error');
+  }
+}
+
+// ─── ADD ITEM ────────────────────────────────────────────────────────────
+async function openAddModal() {
+  await loadParents();
+  populateParentSelect('addParent', null, null);
+  document.getElementById('addName').value = '';
+  document.getElementById('addDesc').value = '';
+  document.getElementById('addOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('addName').focus(), 100);
+}
+
+async function submitAdd() {
+  const name = document.getElementById('addName').value.trim();
+  if (!name) { showToast('Name is required', 'error'); return; }
+  const parentVal = document.getElementById('addParent').value;
+  
+  try {
+    const res = await fetch(`${API}/api/items`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        short_name: name,
+        description: document.getElementById('addDesc').value,
+        parent_id: parentVal ? parseInt(parentVal) : null
+      })
+    });
+    if (!res.ok) throw new Error();
+    const item = await res.json();
+    closeModal('addOverlay');
+    showToast('Item added!', 'success');
+    loadItems(document.getElementById('searchInput').value);
+    // Open the new item
+    openItem(item.id);
+  } catch(e) {
+    showToast('Failed to add item', 'error');
+  }
+}
+
+// ─── PARENTS ─────────────────────────────────────────────────────────────
+async function loadParents() {
+  try {
+    const res = await fetch(`${API}/api/parents`);
+    allParents = await res.json();
+  } catch(e) {}
+}
+
+function populateParentSelect(selectId, excludeId, selectedId) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = '<option value="">— No parent (top level) —</option>';
+  allParents.filter(p => p.id !== excludeId).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.short_name} [${p.id}]`;
+    if (p.id === selectedId) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+// ─── QR / LABEL ──────────────────────────────────────────────────────────
+async function downloadQR() {
+  if (!currentItem) return;
+  const res = await fetch(`${API}/api/items/${currentItem.id}/qr`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `label-${currentItem.id}.png`;
+  a.click();
+}
+
+function printLabel() {
+  if (!currentItem) return;
+  const qrUrl = `${API}/api/items/${currentItem.id}/qr`;
+  const win = window.open('', '_blank', 'width=400,height=400');
+  win.document.write(`
+    <html><head><title>Label</title>
+    <style>
+      body { font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: white; }
+      img { width: 200px; height: 200px; }
+      .id { font-size: 12px; color: #666; margin-top: 4px; }
+      .name { font-size: 14px; font-weight: bold; text-align: center; margin-top: 6px; max-width: 200px; }
+    </style></head>
+    <body onload="window.print()">
+      <img src="${qrUrl}" alt="QR">
+      <div class="id">${currentItem.id}</div>
+      <div class="name">${esc(currentItem.short_name)}</div>
+    </body></html>
+  `);
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────
+function copyId() {
+  if (!currentItem) return;
+  navigator.clipboard.writeText(String(currentItem.id));
+  showToast('ID copied!', 'success');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  if (id === 'detailOverlay') {
+    currentItem = null;
+    history.pushState({}, '', '/');
+  }
+}
+
+function overlayClick(e, id) {
+  if (e.target.id === id) closeModal(id);
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Enter key on add form
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('detailOverlay');
+    closeModal('addOverlay');
+  }
+});
+</script>
+</body>
+</html>

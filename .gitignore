@@ -1,0 +1,10 @@
+# PlatformIO
+**/.pio/
+**/.vscode/
+**/lib/
+**/test/
+
+# Build artifacts
+**/*.elf
+**/*.bin
+**/*.map
