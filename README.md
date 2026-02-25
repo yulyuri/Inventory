@@ -82,7 +82,7 @@ PASSWORD = "homelab123"                                # Change this to your own
 - [ ] **Improve hierarchy visualisation** — make the parent-child tree structure more visually obvious, e.g. a tree view or collapsible nested list in the UI (- or something ZJ does)
 - [ ] **Multi-user support** — separate logins for different household members (Probably need to do more sql configuration. Right now its only one single table so its easy. But with mutiple users probably need a Users table )
 
-## Stack Used
+## Stack Used   
 
 - [FastAPI](https://fastapi.tiangolo.com/) — backend
 - SQLite — database
