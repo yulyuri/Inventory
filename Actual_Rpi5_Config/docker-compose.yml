@@ -1,0 +1,15 @@
+services:
+  inventory:
+    build: .
+    container_name: inventory
+    restart: unless-stopped
+    ports:
+      - "8084:8000"
+    volumes:
+      - ./data:/app/data
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    environment:
+      - NIIMBLUE_SERVER=http://host-gateway:5000
+      - PRINTER_MAC=C3:1B:20:05:13:83
+      - BASE_URL=https://inventory.tanscloud.space
